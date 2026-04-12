@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Radosław Dunaj | Inżynier Logistyki</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:        #0d0f11;
+      --surface:   #13171b;
+      --border:    #1e2530;
+      --accent:    #00c8a0;
+      --accent2:   #3d7fff;
+      --muted:     #4a5568;
+      --text:      #d4dce8;
+      --text-dim:  #7a8899;
+      --mono:      'IBM Plex Mono', monospace;
+      --serif:     'DM Serif Display', Georgia, serif;
+      /* CRT glow – dopasowane do nowej palety */
+      --glow-sm:   0 0 6px rgba(0,200,160,.5),  0 0 18px rgba(0,200,160,.2);
+      --glow-md:   0 0 10px rgba(0,200,160,.65), 0 0 30px rgba(0,200,160,.3);
+      --glow-cyan: 0 0 8px rgba(61,127,255,.55), 0 0 24px rgba(61,127,255,.22);
+    }
+
+    /* ── TERMINAL TEXT SELECTION ── */
+    ::selection {
+      background: var(--accent);
+      color: #000;
+      text-shadow: none;
+    }
+    ::-moz-selection {
+      background: var(--accent);
+      color: #000;
+      text-shadow: none;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    /* ── PUNKT 3: Boot loader – strona schowana do końca sekwencji ── */
+    body {
+      background: #000;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       BOOT SCREEN
+    ══════════════════════════════════════════════════════ */
+    #boot {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px clamp(20px, 5vw, 80px);
+      overflow: hidden;
+    }
+
+    #boot.hidden {
+      animation: bootFade .5s ease forwards;
+    }
+
+    @keyframes bootFade {
+      to { opacity: 0; pointer-events: none; visibility: hidden; }
+    }
+
+    .boot-line {
+      font-size: clamp(11px, 1.4vw, 13px);
+      line-height: 1.6;
+      white-space: pre;
+      opacity: 0;
+      color: var(--text);
+    }
+
+    .boot-line.ok    { color: var(--accent); }
+    .boot-line.info  { color: var(--accent2); }
+    .boot-line.warn  { color: #ffcc00; }
+    .boot-line.error { color: #ff4444; }
+    .boot-line.dim   { color: var(--text-dim); }
+
+    .boot-line.visible { opacity: 1; }
+
+    /* ══════════════════════════════════════════════════════
+       MAIN PAGE
+    ══════════════════════════════════════════════════════ */
+    .page-wrapper {
+      opacity: 0;
+      transition: opacity .6s ease;
+    }
+    .page-wrapper.visible { opacity: 1; }
+
+    /* grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: .45;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* scanline vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, #000 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── LAYOUT ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 80px 32px 120px;
+    }
+
+    /* ── SOFT REVEAL — Miękkie pojawianie się sekcji ───────
+       stamp-hidden: niewidoczne, przesunięte w dół, rozmyte.
+       stamp-active: pełna widoczność przez opacity+transform+filter.
+    ─────────────────────────────────────────────────────── */
+    .stamp-hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(4px);
+    }
+
+    .stamp-active {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+      transition: opacity 800ms ease-out, transform 600ms ease-out, filter 700ms ease-out;
+    }
+
+    /* Footer */
+    .reveal-later { opacity: 0; transition: opacity .35s ease; }
+    .reveal-later.visible { opacity: 1; }
+
+    /* ── HEADER ── */
+    header {
+      border-left: 3px solid var(--accent);
+      /* PUNKT 4: glow na border */
+      box-shadow: -3px 0 12px rgba(0,200,160,.35);
+      padding-left: 24px;
+      margin-bottom: 64px;
+    }
+
+    .header-label {
+      font-size: 11px;
+      letter-spacing: .2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      /* PUNKT 4: CRT glow na label */
+      text-shadow: var(--glow-sm);
+    }
+
+    /* PUNKT 1 + 2: Typewriter + kursor blokowy */
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 6vw, 3.6rem);
+      font-weight: 400;
+      line-height: 1.1;
+      color: #efffef;
+      margin-bottom: 16px;
+      /* PUNKT 4: poświata na nagłówku */
+      text-shadow: 0 0 20px rgba(0,200,160,.25), 0 0 60px rgba(0,200,160,.08);
+      min-height: 2.3em; /* rezerwacja miejsca */
+    }
+
+    h1 .typed-name { color: var(--accent); text-shadow: var(--glow-md); }
+
+    /* PUNKT 2: Migający kursor blokowy */
+    .cursor-block {
+      display: inline-block;
+      width: .65em;
+      height: 1em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      box-shadow: var(--glow-sm);
+      animation: blink-block 1s step-end infinite;
+    }
+
+    @keyframes blink-block {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .separator {
+      display: inline-block;
+      width: 40px; height: 2px;
+      background: var(--accent2);
+      vertical-align: middle;
+      margin: 0 12px;
+      box-shadow: var(--glow-cyan);
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: .12em;
+    }
+
+    /* ── BIO ── */
+    .bio {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      box-shadow: 0 0 0 1px transparent, 0 0 18px rgba(0,200,160,.06);
+      padding: 28px 32px;
+      margin-bottom: 64px;
+    }
+
+    .bio .bio-label {
+      font-size: 12px;
+      letter-spacing: .25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      text-shadow: var(--glow-sm);
+    }
+
+    .bio p:not(.bio-label) {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.85;
+    }
+
+
+
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 11px;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* PUNKT 1: typewriter na ścieżkach */
+    .typed-path { display: inline; }
+
+    /* ── GATEWAY CARDS ── */
+    .gateways {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      position: relative;
+      transition: border-color .25s, transform .25s, box-shadow .25s;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--card-accent, var(--accent));
+      transition: width .25s, box-shadow .25s;
+      animation: system-pulse 3s ease-in-out infinite;
+    }
+
+    .card:hover {
+      border-color: var(--card-accent, var(--accent));
+      transform: translateX(4px);
+    }
+
+    /* PUNKT 4: card glow przy hover */
+    .card--linkedin:hover  { box-shadow: -4px 0 24px rgba(43,141,214,.25); }
+    .card--github:hover    { box-shadow: -4px 0 24px rgba(230,237,243,.12); }
+    .card--instagram:hover { box-shadow: -4px 0 24px rgba(225,48,108,.2); }
+
+    .card:hover::before {
+      width: 5px;
+      animation: none;
+      opacity: 1;
+      box-shadow: 0 0 12px 2px rgba(var(--card-accent-rgb), .5);
+    }
+
+    /* Zmienne per karta — HEX i RGB w jednym miejscu */
+    .card--linkedin  { --card-accent: #2b8dd6; --card-accent-rgb: 43,141,214; }
+    .card--github    { --card-accent: #adbac7; --card-accent-rgb: 173,186,199; }
+    .card--instagram { --card-accent: #e1306c; --card-accent-rgb: 225,48,108; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    /* SYSTEM HEARTBEAT — wspólny puls ikon i pasków bocznych kart
+       Wszystkie elementy zsynchronizowane w tym samym rytmie 3s.
+       Modulacja opacity + box-shadow — zero geometrii.           */
+    @keyframes system-pulse {
+      0%, 100% { opacity: .55; box-shadow: 0 0 3px 0px rgba(var(--card-accent-rgb), .12); }
+      50%       { opacity: 1;   box-shadow: 0 0 9px 2px rgba(var(--card-accent-rgb), .38); }
+    }
+
+    .card-icon {
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(var(--card-accent-rgb), .28);
+      flex-shrink: 0;
+      color: var(--card-accent);
+      animation: system-pulse 3s ease-in-out infinite;
+      transition: border-color .2s, box-shadow .2s, opacity .2s;
+    }
+
+    .card-icon svg { width: 18px; height: 18px; }
+    .card-number { display: none; }
+
+    /* Ikona jako klikalny link */
+    a.card-icon-link {
+      display: inline-flex;
+      text-decoration: none;
+    }
+
+
+
+    /* Hover wzmacnia puls — zatrzymuje animację, ustawia peak */
+    a.card-icon-link:hover .card-icon {
+      animation: none;
+      opacity: 1;
+      border-color: rgba(var(--card-accent-rgb), .85);
+      box-shadow: 0 0 14px 3px rgba(var(--card-accent-rgb), .45);
+      filter: drop-shadow(0 0 5px var(--card-accent));
+    }
+
+    .card-title {
+      font-size: 13px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    .card--linkedin  .card-title,
+    .card--github    .card-title,
+    .card--instagram .card-title {
+      color: var(--card-accent);
+      text-shadow: 0 0 8px rgba(var(--card-accent-rgb), .4);
+    }
+
+    .card-body {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+
+
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 80px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .footer-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: var(--glow-sm);
+      animation: pulse 2s infinite;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.8); }
+    }
+
+    /* ── HARDWARE REFRESH v2 — Anomalia + Korekta ──────────
+       Faza 1: .jitter na .page-wrapper — mikroskopijne drgnięcie
+       Faza 2: runScan — szybka linia skanera jako korekta systemu
+       Faza 3: flash-accent — rozbłysk elementów przy przejściu linii
+       Zero przesunięć layoutu. Tylko transformacje kompozytora + światło.
+    ─────────────────────────────────────────────────────── */
+
+    /* FAZA 1 — Jitter: zakłócenie sygnału, 240ms, steps(6) */
+    @keyframes jitter {
+      0%   { transform: translateX(0)     skewX(0deg); }
+      20%  { transform: translateX(-2px)  skewX(-.5deg); }
+      40%  { transform: translateX(2px)   skewX(.5deg); }
+      60%  { transform: translateX(-1px)  skewX(-.2deg); }
+      80%  { transform: translateX(1.5px) skewX(.3deg); }
+      100% { transform: translateX(0)     skewX(0deg); }
+    }
+
+    /* Nakładana przez JS na #main (page-wrapper) */
+    #main.jitter {
+      animation: jitter 240ms steps(6) forwards;
+    }
+
+    /* Linia skanera — jeden stały element w DOM */
+    #scanner {
+      position: fixed;
+      left: 0; right: 0;
+      height: 3px;
+      top: var(--scan-y, -10px);
+      background: linear-gradient(90deg,
+        transparent       0%,
+        rgba(61,127,255,.08)  8%,
+        rgba(0,200,160,.55)  30%,
+        rgba(180,255,240,.85) 50%,
+        rgba(0,200,160,.55)  70%,
+        rgba(61,127,255,.08)  92%,
+        transparent      100%);
+      filter: blur(.6px);
+      box-shadow:
+        0 0 6px 1px rgba(0,200,160,.5),
+        0 0 18px 3px rgba(0,200,160,.18);
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      will-change: top, opacity;
+    }
+
+    /* Rozbłysk headera (border-left + imię) */
+    header.flash-accent {
+      box-shadow:
+        -3px 0 22px rgba(0,200,160,.75),
+        -3px 0 6px  rgba(0,200,160,.9);
+      transition: box-shadow 180ms ease-out;
+    }
+    header {
+      transition: box-shadow 600ms ease-out;
+    }
+
+    /* Rozbłysk typed-name (imię w kolorze akcentu) */
+    .typed-name.flash-accent {
+      text-shadow:
+        0 0 14px rgba(0,200,160,.95),
+        0 0 32px rgba(0,200,160,.5);
+      transition: text-shadow 180ms ease-out;
+    }
+    .typed-name {
+      transition: text-shadow 600ms ease-out;
+    }
+
+    /* Rozbłysk bio-label (turkusowy — spójny z var(--accent)) */
+    .bio .bio-label.flash-accent {
+      text-shadow:
+        0 0 12px rgba(0,200,160,.95),
+        0 0 28px rgba(0,200,160,.45);
+      transition: text-shadow 180ms ease-out;
+    }
+    .bio .bio-label {
+      transition: text-shadow 600ms ease-out;
+    }
+
+
+
+    /* Rozbłysk kart (border-left) */
+    .card.flash-accent {
+      box-shadow: -4px 0 20px rgba(0,200,160,.35);
+      transition: box-shadow 180ms ease-out;
+    }
+    .card {
+      transition: border-color .25s, transform .25s, box-shadow 600ms ease-out;
+    }
+
+    /* Rozbłysk section-title */
+    .section-title.flash-accent {
+      text-shadow: 0 0 10px rgba(0,200,160,.5);
+      transition: text-shadow 180ms ease-out;
+    }
+    .section-title {
+      transition: text-shadow 600ms ease-out;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .page { padding: 48px 20px 80px; }
+      .bio, .card { padding: 22px 20px; }
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     PUNKT 3: BOOT SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="scanner"></div>
+
+<div id="boot">
+  <div id="boot-lines"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MAIN PAGE
+══════════════════════════════════════════════════════ -->
+<div class="page-wrapper" id="main">
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <p class="header-label">/home</p>
+    <!-- PUNKT 1+2: typewriter + kursor blokowy -->
+    <h1 id="h1-target"><span class="cursor-block" id="main-cursor"></span></h1>
+    <p class="subtitle">Inżynier Logistyki / Pasjonat IT</p>
+  </header>
+
+  <!-- BIO -->
+  <section class="bio stamp-hidden" id="sec-bio">
+    <p class="bio-label">/home/radoslawdunaj/bio</p>
+    <p>
+      Inżynier logistyki z wieloletnim doświadczeniem w kompleksowym zarządzaniu procesami
+      e-commerce i gospodarką magazynową (B2B/B2C). Specjalizuję się w obsłudze zamówień
+      i przepływu dokumentacji sprzedażowej – w tym fakturowania VAT dla klientów
+      biznesowych – przy użyciu systemu ERP Teneum oraz platformy Shoper. Analityczne
+      podejście do diagnozowania błędów operacyjnych i obsługi logistyki zwrotnej łączę
+      z umiejętnością mapowania procesów i wdrażania usprawnień. Obok kompetencji
+      wyniesionych z pracy zawodowej, równolegle rozwijam zaplecze techniczne – zarządzam
+      bezpieczną domową infrastrukturą sieciową w środowisku Linux oraz praktycznie poznaję
+      architekturę mikrokontrolerów i niskopoziomowe programowanie systemów wbudowanych.
+      Moje analityczne podejście przenoszę również na grunt mechaniki – jako zaawansowany
+      kolarz amator samodzielnie serwisuję i modernizuję swój sprzęt, co pozwala mi
+      w praktyce doskonalić umiejętności diagnozowania usterek i optymalizacji systemów
+      mechanicznych.
+    </p>
+
+  </section>
+
+  <!-- GATEWAYS -->
+
+  <div class="gateways" id="sec-cards">
+
+    <div class="card card--linkedin stamp-hidden" id="card-linkedin">
+      <div class="card-header">
+        <a class="card-icon-link" href="https://www.linkedin.com/in/radosławdunaj" target="_blank" rel="noopener noreferrer">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+              <rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+            </svg>
+          </div>
+        </a>
+      </div>
+      <p class="card-title">/home/radoslawdunaj/career_history</p>
+      <p class="card-body">
+        Szczegółowe logi operacyjne zatrudnienia oraz bezpieczny kanał
+        komunikacyjny zostały przekierowane na autoryzowany węzeł zewnętrzny.<br>
+      </p>
+    </div>
+
+    <div class="card card--github stamp-hidden" id="card-github">
+      <div class="card-header">
+        <a class="card-icon-link" href="https://github.com/RadoslawDunaj?tab=repositories" target="_blank" rel="noopener noreferrer">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+            </svg>
+          </div>
+        </a>
+      </div>
+      <p class="card-title">/home/radoslawdunaj/source_code</p>
+      <p class="card-body">
+        Otwarty kod źródłowy, dokumentacja techniczna wdrażanych rozwiązań
+        oraz pliki konfiguracyjne w repozytoriach.<br>
+      </p>
+    </div>
+
+    <div class="card card--instagram stamp-hidden" id="card-instagram">
+      <div class="card-header">
+        <a class="card-icon-link" href="https://www.instagram.com/service_log_/" target="_blank" rel="noopener noreferrer">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+          </div>
+        </a>
+      </div>
+      <p class="card-title">/home/radoslawdunaj/service_log</p>
+      <p class="card-body">
+        Wizualne logi z diagnostyki sprzętowej oraz rejestr terenowej eksploatacji
+        mechanicznej przekazywane są na zewnętrzny interfejs.<br>
+      </p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="reveal-later" id="sec-footer">
+    <div class="footer-status">
+      <span class="status-dot"></span>
+      <span>OTWARTY NA WSPÓŁPRACĘ</span>
+    </div>
+    <span>RADOSŁAW DUNAJ &copy; <span id="year"></span></span>
+  </footer>
+
+</div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   PUNKT 3: BOOT SEQUENCE
+════════════════════════════════════════════════════════ */
+const BOOT_LINES = [
+  // ── NAGŁÓWEK ────────────────────────────────────────────────────────
+  { text: 'Initializing system boot sequence...', cls: 'dim', delay: 120 },
+  { text: '', cls: '', delay: 220 },
+
+  // ── SEKCJA 1: Pop!_OS / środowisko hosta ───────────────────────────
+  { text: '[ INFO ] Host environment verified: Pop!_OS 24.04 LTS (x86_64)', cls: 'info', delay: 340 },
+  { text: '[  OK  ] Loaded custom kernel modules', cls: 'ok', delay: 480 },
+  { text: '[  OK  ] Started System Logging Service', cls: 'ok', delay: 590 },
+  { text: '', cls: '', delay: 670 },
+
+  // ── SEKCJA 2: Chmura i OPSEC ───────────────────────────────────────
+  { text: '[  OK  ] Establishing encrypted cloud routing table', cls: 'ok', delay: 780 },
+  { text: '[ WARN ] OPSEC Shield Active: Zero-Trust architecture enforced. Unsigned requests will be dropped', cls: 'warn', delay: 940 },
+  { text: '[  OK  ] Secured external uplink', cls: 'ok', delay: 1120 },
+  { text: '', cls: '', delay: 1200 },
+
+  // ── SEKCJA 3: Hardware / Raspberry Pi Pico ─────────────────────────
+  { text: '[  OK  ] Probing external interfaces...', cls: 'ok', delay: 1300 },
+  { text: '[ INFO ] Hardware node detected: RP2350 (MicroPython runtime) attached to /dev/ttyACM0', cls: 'info', delay: 1430 },
+  { text: '', cls: '', delay: 1540 },
+
+  // ── SEKCJA 4: Virtual filesystems ─────────────────────────────────
+  { text: 'Mounting virtual filesystems...', cls: 'dim', delay: 1620 },
+  { text: '[  OK  ] Mounted /home/radoslawdunaj', cls: 'ok', delay: 1720 },
+  { text: '[  OK  ] Mounted /home/radoslawdunaj/bio', cls: 'ok', delay: 1820 },
+  { text: '[  OK  ] Mounted /home/radoslawdunaj/career_history', cls: 'ok', delay: 1920 },
+  { text: '[  OK  ] Mounted /home/radoslawdunaj/source_code', cls: 'ok', delay: 2020 },
+  { text: '[  OK  ] Mounted /home/radoslawdunaj/service_log', cls: 'ok', delay: 2110 },
+  { text: '', cls: '', delay: 2190 },
+  { text: 'Loading user profile: radoslawdunaj...', cls: '', delay: 2260 },
+  { text: '[  OK  ] Profile loaded. Welcome back', cls: 'ok', delay: 2440 },
+  { text: '', cls: '', delay: 2510 },
+  { text: 'Launching portfolio interface...', cls: 'dim', delay: 2570 },
+];
+
+const bootEl   = document.getElementById('boot');
+const linesEl  = document.getElementById('boot-lines');
+const mainEl   = document.getElementById('main');
+const BOOT_END = 3150; // ms kiedy strona przejmuje
+
+BOOT_LINES.forEach(({ text, cls, delay }) => {
+  setTimeout(() => {
+    const div = document.createElement('div');
+    div.className = 'boot-line visible' + (cls ? ' ' + cls : '');
+    div.textContent = text || '\u00A0'; // NBSP dla pustych linii
+    linesEl.appendChild(div);
+    // autoscroll
+    linesEl.scrollTop = linesEl.scrollHeight;
+  }, delay);
+});
+
+setTimeout(() => {
+  bootEl.classList.add('hidden');
+  mainEl.classList.add('visible');
+  // uruchom typewriter PO odsłonięciu strony
+  startTypewriter();
+}, BOOT_END);
+
+/* ════════════════════════════════════════════════════════
+   PUNKT 1 + 2: TYPEWRITER + GLITCH DECODE + LAG
+════════════════════════════════════════════════════════ */
+
+// Pula znaków do animacji dekodowania
+const GLITCH_CHARS = '!@#$%^&*<>?/\\|[]{}~`ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+function randChar() {
+  return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+}
+
+/**
+ * Wpisuje jeden znak z animacją glitch-decode.
+ * Przez FRAMES klatek pokazuje losowy znak w miejscu docelowej litery,
+ * potem ustawia właściwy znak i wywołuje callback.
+ *
+ * @param {HTMLElement} span    - element do zapisu
+ * @param {number}      pos     - indeks znaku w span.textContent
+ * @param {string}      target  - docelowy znak
+ * @param {number}      frames  - ile klatek glitchu przed ujawnieniem
+ * @param {number}      frameMs - czas jednej klatki glitchu [ms]
+ * @param {Function}    done    - callback po zakończeniu
+ */
+function decodeChar(span, pos, target, frames, frameMs, done) {
+  let f = 0;
+
+  // Zapisujemy znaki już potwierdzone
+  const locked = span.textContent; // np. "Ra"
+
+  const tick = setInterval(() => {
+    // Odbuduj tekst: locked + glitch na pozycji pos + reszta pusta
+    span.textContent = locked + randChar();
+    f++;
+    if (f >= frames) {
+      clearInterval(tick);
+      span.textContent = locked + target; // ustaw właściwy znak
+      done();
+    }
+  }, frameMs);
+}
+
+/**
+ * Wpisuje cały tekst litera po literze, każda z glitch-decode.
+ * Obsługuje opcjonalny lag (pauza) na wskazanym indeksie znaku.
+ *
+ * @param {HTMLElement} el        - kontener (h1)
+ * @param {string}      text      - tekst do wpisania
+ * @param {string}      tag       - tag HTML dla spana
+ * @param {string}      cls       - klasa CSS
+ * @param {number}      lagAt     - indeks znaku, po którym wstawiamy lag (-1 = brak)
+ * @param {number}      lagMs     - czas lagu [ms]
+ * @param {Function}    onDone    - callback po wpisaniu całego tekstu
+ */
+function typeGlitch(el, text, tag, cls, lagAt, lagMs, onDone) {
+  const cursor = document.getElementById('main-cursor');
+  const span   = document.createElement(tag || 'span');
+  if (cls) span.className = cls;
+  el.insertBefore(span, cursor);
+
+  let charIdx = 0;
+
+  function nextChar() {
+    if (charIdx >= text.length) {
+      if (onDone) onDone();
+      return;
+    }
+
+    const target = text[charIdx];
+    const pos    = charIdx;
+    charIdx++;
+
+    // Znaki specjalne (łamanie linii, spacje) — wstaw od razu bez glitchu
+    if (target === '\n' || target === ' ') {
+      // dla \n używamy osobnego br — tutaj nie powinno trafić,
+      // spację wstawiamy bez efektu
+      span.textContent += target;
+      setTimeout(nextChar, 60);
+      return;
+    }
+
+    // Glitch: 2 klatki po 12ms = 24ms na znak + 5ms przerwy = ~29ms/znak
+    decodeChar(span, pos, target, 2, 12, () => {
+      if (pos === lagAt) setTimeout(nextChar, lagMs);
+      else               setTimeout(nextChar, 5);
+    });
+  }
+
+  nextChar();
+}
+
+/* ════════════════════════════════════════════════════════
+   SOFT REVEAL — Miękkie pojawianie się sekcji
+   Kaskada 160ms między sekcjami. Pauza 300ms po nagłówku.
+════════════════════════════════════════════════════════ */
+
+function stamp(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('stamp-hidden');
+  // Wymuś reflow — bez tego przeglądarka może scalić obie klasy
+  void el.offsetWidth;
+  el.classList.add('stamp-active');
+}
+
+function revealSections() {
+  const DELAY   = 300; // pauza po nagłówku
+  const CASCADE = 160; // ms między sekcjami
+
+  const sequence = [
+    'sec-bio',
+    'card-linkedin',
+    'card-github',
+    'card-instagram',
+  ];
+
+  sequence.forEach((id, i) => {
+    setTimeout(() => stamp(id), DELAY + i * CASCADE);
+  });
+
+  // Footer — po ostatniej karcie
+  setTimeout(() => {
+    document.getElementById('sec-footer').classList.add('visible');
+    // Glitch startuje po pełnym załadowaniu strony — dodatkowe 800ms buforu
+    setTimeout(scheduleGlitch, 800);
+  }, DELAY + sequence.length * CASCADE + 80);
+}
+
+function startTypewriter() {
+  const label  = document.querySelector('.header-label');
+  const h1     = document.getElementById('h1-target');
+  const subtitle = document.querySelector('.subtitle');
+
+  // Czyścimy label i subtitle — będą wpisane przez glitch
+  const labelOriginal    = label.textContent;
+  const subtitleOriginal = subtitle.textContent;
+  label.textContent    = '';
+  subtitle.textContent = '';
+
+  // Kursor glitchu dla labela i subtitle (własny span inline)
+  function glitchInline(el, text, cls, lagAt, lagMs, onDone) {
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    el.appendChild(span);
+
+    let charIdx = 0;
+    function nextChar() {
+      if (charIdx >= text.length) { if (onDone) onDone(); return; }
+      const target = text[charIdx];
+      const pos    = charIdx;
+      charIdx++;
+      if (target === ' ') { span.textContent += target; setTimeout(nextChar, 5); return; }
+      decodeChar(span, pos, target, 2, 12, () => {
+        if (pos === lagAt) setTimeout(nextChar, lagMs);
+        else               setTimeout(nextChar, 5);
+      });
+    }
+    nextChar();
+  }
+
+  // KROK 1: "portfolio"  (9 znaków × 40ms = 360ms)
+  glitchInline(label, labelOriginal, '', -1, 0, () => {
+
+    // KROK 2: "Radosław" z lagiem 140ms po 'o' (indeks 3)
+    setTimeout(() => {
+      typeGlitch(h1, 'Radosław', 'span', '', 3, 140, () => {
+
+        const br     = document.createElement('br');
+        const cursor = document.getElementById('main-cursor');
+        h1.insertBefore(br, cursor);
+
+        // KROK 3: "Dunaj"
+        setTimeout(() => {
+          typeGlitch(h1, 'Dunaj', 'span', 'typed-name', -1, 0, () => {
+
+            // KROK 4: "Inżynier Logistyki / Pasjonat IT"
+            setTimeout(() => {
+              glitchInline(subtitle, subtitleOriginal, '', -1, 0, () => {
+
+                // KROK 5: reveal sekcji
+                setTimeout(revealSections, 60);
+              });
+            }, 25);
+          });
+        }, 25);
+      });
+    }, 25);
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   HARDWARE REFRESH ENGINE
+   Linia skanera przelatuje przez stronę via rAF.
+   JS synchronizuje rozbłyski elementów z pozycją linii.
+════════════════════════════════════════════════════════ */
+
+// Elementy reaktywne — grupy z progami Y i klasą flash
+// Budowane przy starcie skanu (getBoundingClientRect jest live)
+function buildTargets() {
+  const targets = [];
+
+  // Header
+  const hdr = document.querySelector('header');
+  if (hdr) targets.push({ el: hdr, cls: 'flash-accent' });
+
+  // typed-name (imię)
+  const name = document.querySelector('.typed-name');
+  if (name) targets.push({ el: name, cls: 'flash-accent' });
+
+  // bio-label
+  const bio = document.querySelector('.bio-label');
+  if (bio) targets.push({ el: bio, cls: 'flash-accent' });
+
+  // Karty
+  document.querySelectorAll('.card').forEach(c => {
+    targets.push({ el: c, cls: 'flash-accent' });
+  });
+
+
+
+  return targets;
+}
+
+function runScan(onDone) {
+  const scanner   = document.getElementById('scanner');
+  const vh        = window.innerHeight;
+  const duration  = 200;            // ms — szybki skan jako korekta systemu
+  const flashZone = 22;             // px — strefa wyzwalania rozbłysku
+  const flashDur  = 350;            // ms — czas trwania rozbłysku
+
+  const targets = buildTargets();
+  const mapped = targets.map(t => {
+    const r = t.el.getBoundingClientRect();
+    return { ...t, triggerY: r.top + r.height * 0.4, fired: false };
+  });
+
+  // Ustaw linię na górze i uwidocznij
+  scanner.style.setProperty('--scan-y', '-4px');
+  scanner.style.opacity = '0.95';
+
+  const start = performance.now();
+
+  function frame(now) {
+    const elapsed  = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // Linia jedzie od -4px do vh+4px
+    const y = -4 + (vh + 8) * progress;
+    scanner.style.setProperty('--scan-y', y + 'px');
+
+    // Fade-out ostatnie 15% — linia znika zanim wyjdzie za ekran
+    if (progress > 0.85) {
+      scanner.style.opacity = ((1 - progress) / 0.15 * 0.95).toString();
+    }
+
+    // Rozbłyski elementów synchroniczne z pozycją linii
+    mapped.forEach(t => {
+      if (!t.fired && y >= t.triggerY - flashZone && y <= t.triggerY + flashZone) {
+        t.fired = true;
+        t.el.classList.add(t.cls);
+        setTimeout(() => t.el.classList.remove(t.cls), flashDur);
+      }
+    });
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      scanner.style.opacity = '0';
+      if (onDone) onDone();
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function scheduleSequence() {
+  // Losowy interwał: 6–12 sekund między sekwencjami
+  const wait = 6000 + Math.random() * 6000;
+
+  setTimeout(() => {
+    const wrapper = document.getElementById('main');
+    if (!wrapper) { scheduleSequence(); return; }
+
+    // FAZA 1 — Jitter (80ms)
+    wrapper.classList.add('jitter');
+
+    setTimeout(() => {
+      // Usuń jitter — CSS animation forwards zatrzymuje w stanie końcowym,
+      // usunięcie klasy resetuje natychmiast do transform:none
+      wrapper.classList.remove('jitter');
+
+      // FAZA 2 — Fast Scanner natychmiast po jitter
+      runScan(() => {
+        // Sekwencja zakończona — zaplanuj następną
+        scheduleSequence();
+      });
+
+    }, 240); // dokładnie czas trwania animacji jitter
+
+  }, wait);
+}
+
+// Alias dla wywołania z revealSections
+function scheduleGlitch() { scheduleSequence(); }
+
+/* ════════════════════════════════════════════════════════
+   ROCZNIK W FOOTERZE
+════════════════════════════════════════════════════════ */
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
